@@ -47,16 +47,6 @@ struct opcode_address next_instruction(pid_t pid, struct user_regs_struct* regs,
  */
 void get_register(pid_t pid, struct user_regs_struct* regs);
 
-/**
- * @brief little endian unsigned long을 array로 변환한다.
- *
- * @param value
- * @param result
- * @param len
- */
-void little_endian_string_from_ulong(unsigned long value, char* result, size_t len);
-
-
 void usage(const char* program) {
     printf("%s <target>", program);
 }
@@ -65,16 +55,6 @@ void get_register(pid_t pid, struct user_regs_struct* regs) {
     if (ptrace(PTRACE_GETREGS, pid, 0, regs) == -1) {
         perror("ptrace(PTRACE_GETREGS)");
         exit(-1);
-    }
-}
-
-void little_endian_string_from_ulong(unsigned long value, char* result, size_t len) {
-    if (!result || (len > sizeof(unsigned long))) {
-        printf("Error: Invalid parameters.\n");
-        return;
-    }
-    for (size_t i = 0; i < sizeof(unsigned long); ++i) {
-        result[i] = (value >> (8 * i)) & 0xFF;
     }
 }
 
@@ -127,18 +107,14 @@ void debugger(pid_t pid) {
         } else {
             // 끝이 아니므로 출력
 
-            //printf("RIP register = 0x%lx.   \n", instr.address);
-
             if (instr.address == 0x401273) {
-                //printf("target!!\n");
                 // rip 조작..
                 regs.rip = 0x40129e;
                 ptrace(PTRACE_SETREGS, pid, 0, &regs);
             } 
             if(instr.address == 0x4012a2) {
                 // rdi에는 문자열 주소가 존재함!!
-                // 이제 이 값을 수정하고
-                // 얘를 출력하고 프로그램 종료하자.
+                // 이제 이 값을 수정
                 ptrace(PTRACE_POKEDATA, pid, regs.rdi, 0xb1ea998feb80b9ea /*김동건*/);//8바이트 복사
                 ptrace(PTRACE_POKEDATA, pid, regs.rdi + 8, 0x00000000000000b4);//8바이트 복사
             }
